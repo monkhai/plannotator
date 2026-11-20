@@ -10,7 +10,7 @@
  * so no test waits the real 2 s.
  */
 import { afterEach, describe, expect, test } from "bun:test";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, realpathSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { cleanRunLine, createInboxRuns, INBOX_RUN_LINE_MAX, INBOX_RUN_TOO_LONG_WORDS, RunLineBuffer, type InboxRunEnded, type InboxRunPrepared, type InboxRuns } from "./inbox-run";
@@ -73,8 +73,8 @@ describe.if(posix)("a run", () => {
     const end = w.ended[0]!;
     expect(end.outcome).toBe("exited");
     expect(end.view).toMatchObject({ state: "failed", exit_code: 3 });
-    expect(end.view.lines.slice(1).sort()).toEqual(["err", "no newline", "out"]);
-    expect(end.view.lines[0]!.endsWith(w.dir.split("/").pop()!)).toBe(true);
+    // stdout and stderr are collected independently.
+    expect([...end.view.lines].sort()).toEqual([realpathSync(w.dir), "err", "no newline", "out"].sort());
   });
 
   test("a saved secret is in the env as $NAME, and never in the output or what the agent gets", async () => {
